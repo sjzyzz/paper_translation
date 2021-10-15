@@ -1,0 +1,54 @@
+\documentclass{ctexart}
+
+\usepackage{subfiles}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\title{修饰符}
+\author{杨资璋（翻译）}
+
+\begin{document}
+\maketitle
+\section{警告警告警告}
+\subfile{sections/warning}
+\section{摘要}
+\subfile{sections/abstract}
+\section{动机}
+\subfile{sections/motivation}
+\section{背景}
+\subfile{sections/background}
+\section{关于修饰符这个名字}
+\section{设计目标}
+\subfile{sections/designGoal}
+\section{当前语法}
+\section{语法的可替代者}
+\section{当前的实现以及历史}
+\section{例子}
+\end{document}

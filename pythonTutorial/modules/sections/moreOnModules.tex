@@ -1,0 +1,67 @@
+\documentclass[../package_guide.tex]{subfiles}
+
+\begin{document}
+模块既可以包含可执行语句也可以包含函数定义。这些语句意在初始化这个模块。它们仅在模块名第一次碰到导入语句时执行。（如果文件作为一个脚本执行它们也会运行。）
+
+每个模块有自己的私有符号表——它被在这个模块中定义的所有函数用作全局符号表。因此，模块的作者在模块中使用全局变量时，不必担心与用户全局变量的意外冲突。另一方面，如果你知道你在干什么，你可以通过与指向它的函数相同的记号来使用模块的全局变量，\lstinline{modname.itemname}。
+
+模块可以导入其他模块。将所有导入语句放在模块（或者脚本）的开头是习惯性但不是必须的做法。被导入模块的名字被放在导入模块的全局符号表中。
+
+还有一种导入语句的变种——它将模块中的名字直接导入到导入模块的符号表中，例如：
+\begin{lstlisting}[language=bash]
+>>> from fibo import fib, fib2
+>>> fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+\end{lstlisting}
+这不会将导入发生的模块名引入局部符号表（所以在这个例子中，fibo没有被定义）。
+
+甚至还有一个导入模块定义的所有名字的变种：
+\begin{lstlisting}[language=bash]
+>>> from fibo import *
+>>> fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+\end{lstlisting}
+这将导入除以下划线（\_）开头的名字外的所有名字。在大多数情况下，由于它为解释器引入了一个未知的名字集合，所以可能会隐藏一些你已经定义的东西，因此Python程序员不会使用这种便利。
+
+注意一般来说由于这经常会导致代码可读性降低，所以使用*从模块导入并不是一个被喜爱的操作。然而，在可交互时期使用它来节省输入是可以的。
+
+\textbf{注意：}由于效率原因，在每个解释器时间每个模块只被导入一次。因此，如果你改变了你的模块，你必须重启解释器——或者，如果你想交互式地测试一个模块，使用importlib.reload()，例如import importlib; importlib.reload(modulename)。
+
+\subsection{像脚本一样执行模块}
+
+当你通过如下语句运行一个Python模块
+\begin{lstlisting}[language=bash]
+python fibo.py <arguments>
+\end{lstlisting}
+模块中的代码将会被执行，正如同你导入了它，但是\lstinline{__name__}将会被设置为\lstinline{"__main__"}。这意味着通过在模块末尾加入如下语句
+\begin{lstlisting}[language=Python]
+if __name__ == "__main__":
+    import sys
+    fib(int(sys.argv[1]))
+\end{lstlisting}
+可以使得这个文件即可作为脚本也可作为可导入的模块，因为解析命令行的代码仅会在模块被当做“main”文件时执行。
+
+这通常被用于为用户提供一个方便的接口或者用于测试意图（在测试样例上将模块作为脚本运行）。
+
+\subsection{模块搜索路径}
+
+当一个名为spam的模块被导入时，解释器首先在自建模块中搜索这个名字。如果没有找到，它接下来会在变量sys.path提供的目录列表中搜索名为\lstinline{spam.py}的文件。sys.path通过下面这些位置初始化：
+\begin{itemize}
+    \item 包含输入脚本的目录（或者当没有指定文件时则为当前目录）
+    \item PYTHONPATH（一个目录名的列表，与shell变量PATH有相同的语法）
+    \item 与安装相关的默认（习惯上包含一个\lstinline{site-packages}目录，被site模块处理）
+\end{itemize}
+
+\textbf{注意：}在支持symlinks的系统，包含输入脚本的目录指的是symlinks之后的目录。换句话说，包含symlink的目录\textbf{不会}包含在模块搜索路径中。
+
+初始化后，Python程序可以修改sys.path。包含正在运行脚本的目录被放置在搜索路径的最开始，在标准库路径之前。这意味着在这个目录中的模块而不是库目录中的同名模块将会被载入。除非替换是有意为之，否则这将会是一个错误。更多信息见\href{https://docs.python.org/3/tutorial/modules.html#tut-standardmodules}{标准模块}章节。
+
+\subsection{“编译好的”Python文件}
+
+为了加快载入模块速度，Python将会以module.version.pyc为名字，缓存\lstinline{__pycache__}目录中每个模块的已编译版本，其中version编码了已编译文件的格式；它基本上包含Python版本号。例如，在Cpython发布的3.3已编译版本中的spam.py将会被缓存为\lstinline{__pycache__/spam.cpython-33.pyc}。这种命名习俗允许不同发布和Python不同版本的已编译模块共存。
+
+Python会检查源的修改数据和已编译版本来查看它是不是已过时以及是否需要被重新编译。这是一个完全自动的过程。同时，已编译模块是与平台无关的，所以同一个库可以在不同架构的系统间共享。
+
+Python不会检查两个情况的缓存。首先，它总是为从命令行直接载入的模块重编译并不会存储结果。其次，如果没有源模块，它不会检查缓存。为了支持无源（仅有已编译）分发，已编译模块必须在源目录下，同时这里也不能有源模块。
+
+\end{document}

@@ -1,0 +1,16 @@
+\documentclass[../main.tex]{subfile}
+
+\begin{document}
+新的语法应该
+\begin{itemize}
+    \item 使用任意封装，包括用户定义的可调用和已存在的自建\lstinline{classmethod()}和\lstinline{staticmethod()}。这个要求也意味着修饰符语法必须支持向封装构造者传入参数
+    \item 对于每个定义支持多个封装
+    \item 使得发生了什么显而易见；至少它应该显然到新用户可以在写自己的代码时忽视它
+    \item 作为一种“一旦被解释很容易记住”的语法
+    \item 不会使得将来的扩展更加困难
+    \item 键入简单；使用它的程序可能非常频繁地使用它
+    \item 不会使得快速浏览代码更加困难。对于搜索所有定义、一个特定的定义或者一个函数接收的参数也应该依旧简单。
+    \item 不会将例如语言敏感的编辑器和其他“玩具分析工具”等次级支持工具变得不必要的复杂
+    \item 允许后来的编译器为了修饰符优化
+\end{itemize}
+\end{document}

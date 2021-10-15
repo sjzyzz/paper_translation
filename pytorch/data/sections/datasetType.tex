@@ -1,0 +1,124 @@
+\documentclass[../main.tex]{subfile}
+
+\begin{document}
+
+\lstinline{DataLoader}的构造函数中最重要的参数就是\lstinline{dataset}，它表明了加载数据的来源。Pytorch支持两种不同类型的数据集：
+\begin{itemize}
+    \item 映射风格的数据集
+    \item 迭代形式的数据集
+\end{itemize}
+
+\subsection{映射形式的数据集}
+
+一个映射风格的数据集是实现了\lstinline{__getitem__()}和\lstinline{__len__()}协议的数据集，它提供一个从索引或者键到数据样本的映射（可能是不完整的）。
+
+例如，这样的数据集，当使用\lstinline{dataset[idx]}访问时，可以从磁盘上的文件夹读取第\lstinline{idx}个图片和它对应的标签。
+
+更多细节见\lstinline{Dataset}。
+
+\subsection{迭代形式的数据集}
+
+一个迭代形式的数据集是实现了\lstinline{__iter__()}协议的\lstinline{IterableDataset}的自类的实例，并提供遍历数据样本的iterable。这种类型的数据集尤其适合任意读取非常昂贵甚至不可行的情况，以及批大小取决于取得的数据的情况。
+
+例如，这样的数据集，当调用\lstinline{iter(dataset)}时，将会返回一个数据集的数据读取流，一个远程的服务器甚至是记录可以实时生成。
+
+更多细节见\lstinline{IterableDataset}。
+
+\textcolor{blue}{NOTE}：当配合使用\lstinline{IterableDataset}和多进程数据加载时，每一个进程的数据集对象是重复的，所以必须设置备份来避免重复数据。如何实现见\lstinline{IterableDataset}文档。
+
+\subsection{IterableDataset的文档}
+
+一个可迭代数据集。
+
+所有表示数据样本的iterable都应该继承它。当数据来自一个流时，这种形式的数据集尤其有用。
+
+所有的子类应该重写\lstinline{__iter__()}，它将返回一个这个数据集中样本的iterator。
+
+当通过\lstinline{DataLoader}使用一个子类时，数据集中的每一个项都会通过\lstinline{DataLoader} iterator得到。当\lstinline{num_worker > 0}时，每个工人进程将会有数据集对象的一个不同备份，所以人们通常想独立设置每个备份来避免各个工人返回相同的数据。当在工人进程中调用\lstinline{get_worker_info()}时，它会返回关于这个工人的信息。可以在数据集的\lstinline{__iter__()}或\lstinline{DataLoader}的\lstinline{worker_init_info}选项中使用它来修改每个备份的行为。
+
+例子1：在\lstinline{__iter__()}中修改所有工人的负担：
+
+\begin{lstlisting}[language=Python]
+>>> class MyIterableDataset(torch.utils.data.IterableDataset):
+...     def __init__(self, start, end):
+...         super(MyIterableDataset).__init__()
+...         assert end > start, "this example code only works with end >= start"
+...         self.start = start
+...         self.end = end
+...
+...     def __iter__(self):
+...         worker_info = torch.utils.data.get_worker_info()
+...         if worker_info is None:  # single-process data loading, return the full iterator
+...             iter_start = self.start
+...             iter_end = self.end
+...         else:  # in a worker process
+...             # split workload
+...             per_worker = int(math.ceil((self.end - self.start) / float(worker_info.num_workers)))
+...             worker_id = worker_info.id
+...             iter_start = self.start + worker_id * per_worker
+...             iter_end = min(iter_start + per_worker, self.end)
+...         return iter(range(iter_start, iter_end))
+...
+>>> # should give same set of data as range(3, 7), i.e., [3, 4, 5, 6].
+>>> ds = MyIterableDataset(start=3, end=7)
+
+>>> # Single-process loading
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=0)))
+[3, 4, 5, 6]
+
+>>> # Mult-process loading with two worker processes
+>>> # Worker 0 fetched [3, 4].  Worker 1 fetched [5, 6].
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=2)))
+[3, 5, 4, 6]
+
+>>> # With even more workers
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=20)))
+[3, 4, 5, 6]
+\end{lstlisting}
+
+例子2：使用\lstinline{worker_init_fn}修改所有工人的负担：
+\begin{lstlisting}[language=Python]
+>>> class MyIterableDataset(torch.utils.data.IterableDataset):
+...     def __init__(self, start, end):
+...         super(MyIterableDataset).__init__()
+...         assert end > start, "this example code only works with end >= start"
+...         self.start = start
+...         self.end = end
+...
+...     def __iter__(self):
+...         return iter(range(self.start, self.end))
+...
+>>> # should give same set of data as range(3, 7), i.e., [3, 4, 5, 6].
+>>> ds = MyIterableDataset(start=3, end=7)
+
+>>> # Single-process loading
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=0)))
+[3, 4, 5, 6]
+>>>
+>>> # Directly doing multi-process loading yields duplicate data
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=2)))
+[3, 3, 4, 4, 5, 5, 6, 6]
+
+>>> # Define a `worker_init_fn` that configures each dataset copy differently
+>>> def worker_init_fn(worker_id):
+...     worker_info = torch.utils.data.get_worker_info()
+...     dataset = worker_info.dataset  # the dataset copy in this worker process
+...     overall_start = dataset.start
+...     overall_end = dataset.end
+...     # configure the dataset to only process the split workload
+...     per_worker = int(math.ceil((overall_end - overall_start) / float(worker_info.num_workers)))
+...     worker_id = worker_info.id
+...     dataset.start = overall_start + worker_id * per_worker
+...     dataset.end = min(dataset.start + per_worker, overall_end)
+...
+
+>>> # Mult-process loading with the custom `worker_init_fn`
+>>> # Worker 0 fetched [3, 4].  Worker 1 fetched [5, 6].
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=2, worker_init_fn=worker_init_fn)))
+[3, 5, 4, 6]
+
+>>> # With even more workers
+>>> print(list(torch.utils.data.DataLoader(ds, num_workers=20, worker_init_fn=worker_init_fn)))
+[3, 4, 5, 6]
+\end{lstlisting}
+\end{document}

@@ -1,0 +1,78 @@
+\documentclass{ctexart}
+
+\usepackage{subfiles}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+
+\title{TORCH.UTILS.DATA}
+\author{杨资璋（翻译）}
+
+\begin{document}
+\maketitle
+Pytorch的数据加载工具核心是\lstinline{torch.utils.data.DataLoader}类。它提供一个遍历数据集的iterable，并支持
+\begin{itemize}
+    \item 映射风格和迭代风格的数据集
+    \item 自定义数据加载顺序
+    \item 自动形成批
+    \item 单进程多进程数据加载
+    \item 自动内存固定
+\end{itemize}
+这些选项通过DataLoader的构建函数参数设置，它的签名是：
+\begin{lstlisting}[language=Python]
+DataLoader(
+    dataset, 
+    batch_size=1, 
+    shuffle=False, 
+    sampler=None, 
+    batch_sampler=None, 
+    num_worker=0, 
+    collate_fn=None,
+    pin_memory=False, 
+    drop_last=False, 
+    timeout=0, 
+    worker_init_fn=None,
+    *, 
+    prefetch_factor=2, 
+    persistent_workers=False
+)
+\end{lstlisting}
+下面的章节详细描述这些选项的功能和用法。
+\section{数据集类型}
+\subfile{sections/datasetType}
+\section{数据加载顺序和Sampler}
+\subfile{sections/dataLoadingOrderAndSampler}
+\section{加载批和非批数据}
+\subfile{sections/loadingBatchedAndNonBatchedData}
+\section{单线程和多线程数据加载}
+\subfile{sections/singleAndMultiProcessDataLoading}
+\section{内存锁定}
+\subfile{sections/memoryPinning}
+\end{document}

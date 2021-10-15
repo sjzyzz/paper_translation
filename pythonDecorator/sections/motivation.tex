@@ -1,0 +1,30 @@
+\documentclass[../main.tex]{subfile}
+
+\begin{document}
+目前为函数或方法进行转化的途径是在函数体后放置一个实际的转化。对于较大的函数，这将函数行为的一个关键组件与函数剩余的外部接口定义分离了。例如：
+\begin{lstlisting}
+def foo(self):
+    perform method operation
+foo = classmethod(foo)
+\end{lstlisting}
+
+对于更长的方法，这边的更加难以阅读。在概念上实际上仅是单个声明但是却三次命名这个函数看起来更加不"python"。这个问题的一个解决方法是将方法的转化移到离方法本身的定义更近的地方。新语法的意在替换
+\begin{lstlisting}[language=Python]
+def foo(self):
+    pass
+foo = synchronized(lock)(foo)
+foo = classmethod(foo)
+\end{lstlisting}
+为一种在函数声明放置装饰的替代。
+\begin{lstlisting}[language=Python]
+@classmethod
+@synchronized(lock)
+def foo(self):
+    pass
+\end{lstlisting}
+
+通过这种形式修改类也是可能的，虽然好处并不是显而易见的。几乎可以肯定的是，任何可以通过类修饰符完成的事情也可以通过元类完成，然而使用元类是十分隐晦的，这使得使用一种更简单的方法修改类有一些吸引力。对于Python2.4，只有函数和方法修饰符被加入了。
+
+\subsection{为什么它如此困难}
+
+\end{document}

@@ -1,0 +1,24 @@
+\documentclass{ctexart}
+
+\usepackage{subfiles}
+\usepackage{hyperref}
+\usepackage{listing}
+
+\title{The import system}
+\author{杨资璋（翻译）}
+\begin{document}
+\maketitle
+
+一个模块中的Python代码通过导入来访问另外一个模块中的代码。导入语句是最常用的使用导入机制方式，但是它并不是仅有的方式。例如importlib.import_module和自带的__import__()的函数也可以用来使用导入机制。
+
+import语句结合了两个操作；它首先寻找指定名字的模块，之后它在局部作用域中将名字与搜索结果绑定。导入语句的搜索操作被定义为通过合适的参数调用__import__()函数。__import__()的返回值被用于导入语句的名字绑定操作。为了名字绑定操作的细节，请查看导入声明。
+
+直接调用__import__()仅进行模块搜索，如果找到了，则也进行模块创建操作。虽然会有某些副作用，例如导入父包，并更新多种缓存（包括sys.modules），但是只有import语句会进行名字绑定操作。
+
+当执行import语句时，标准的自带__import__函数会被调用。其他使用导入系统的机制（例如importlib.import_module()）可能选择绕开__import__()并使用它们自己的方法来实现导入语义。
+
+当一个模块第一次被导入是，Python会查找这个模块，如果找到了，它会创建一个模块对象，并初始化它。如果无法找到这个模块，会产生ModuleNotFoundError。当使用导入机制时，Python实现了多种寻找模块的策略。通过下面描述的多种勾子可以修改或扩展这些策略。
+
+\section{importlib}
+\subfile{sections/packaging_and_distributing_projects}
+\end{document}

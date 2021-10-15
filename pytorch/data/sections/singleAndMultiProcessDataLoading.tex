@@ -1,0 +1,48 @@
+\documentclass[../main.tex]{subfile}
+
+\begin{document}
+
+\lstinline{DataLoader}默认使用单线程数据加载。
+
+在一个Python进程中，全局解释器锁阻止了多个线程间的真正完全并行。为了避免数据加载堵塞计算代码，PyTorch提供了一种通过将\lstinline{num_workers}设置为一个正整数的方式来进行多进程数据加载的简单转化。
+
+\subsection{单进程数据加载（默认）}
+
+在这种模式下，数据抓取会在与\lstinline{DataLoader}初始化相同的进程中完成。因此，数据加载可能堵塞计算。然而，当用于进程间共享的资源（例如共享存储，文件描述符）有限或者数据集小到可以全部加载入内存时，这个模式更好。额外地，单进程加载通常会显示可读性更强的错误痕迹，因此对于debug更加有用。
+
+\subsection{多进程数据加载}
+
+将\lstinline{num_workers}设置为正整数将会开启特定加载工人进程数的多进程数据加载。
+
+在这种模式下，每当\lstinline{DataLoader}被创建（例如，当你调用\lstinline{enumerate(datalaoder)}时），\lstinline{num_workers}个工人进程也会被创建。在这时，\lstinline{dataset}, \lstinline{collate_fn}和\lstinline{worker_init_fn}会被传给每个工人来进行初始化以及抓取数据。这意味着通过数据集内部IO访问数据集以及传输（包括\lstinline{collate_fn}）会在工人进程中运行。
+
+\lstinline{torch.utils.data.get_worker_info()}返回工人进程中的多个有用信息（包括工人id，数据集备份和初始化种子等），同时在主进程返回\lstinline{None}。用户可以在数据集代码和/或\lstinline{worker_init_fn}中使用这个函数来分别设置每个数据集备份并决定代码是否在工人进程中运行。例如，这对于数据集碎片化尤其有用。
+
+对于映射形式的数据集，主进程使用\lstinline{sampler}生成索引并将它们发送给工人。所以任意的打乱随机操作应该在主进程中完成，主进程会通过分发加载的索引来指导加载。
+
+对于迭代形式的数据集，由于每个工人进程会得到一个\lstinline{dataset}对象的备份，简单的多进程加载通常会导致重复数据。通过使用\lstinline{torch.utils.data.get_worker_info()}和/或\lstinline{worker_init_fn}，用户可以独立设置每个备份。（如何实现见\lstinline{IterabhleDataset}文档。）出于类似的原因，在多进程加载中，\lstinline{drop_last}参数会丢弃每一个工人的迭代式数据集备份的最后一个不全批。
+
+一旦到达迭代的结尾或者iterator变成了被收集了的垃圾，工人进程就会被关闭。
+
+\textcolor{red}{WARNING}：一般来说，因为在多进程中使用CUDA和共享CUDA张量存在诸多微妙之处，所以在多进程加载中返回CUDA张量是不推荐的。然而，我们推荐使用自动内存锁定（也就是，设置\lstinline{pin_memory=True}），这将会使得将数据快速传输到CUDA使能的GPU。
+
+\subsubsection{平台特定的行为}
+
+由于工人依赖于Python的\lstinline{multiprocessing}，所以工人的启动行为在Windows和Unix是不同的。
+\begin{itemize}
+    \item 在Unix，\lstinline{fork()}是\lstinline{multiprocessing}的默认开始方法。使用\lstinline{fork()}，子工人通常可以通过克隆的地址空间直接访问\lstinline{dataset}和Python参数函数
+    \item 在Windows或MacOS，\lstinline{spawn()}是\lstinline{multiprocessing}的默认开始方法。使用\lstinline{spawn()}，另外一个运行你的主脚本的解释器会被启动，接着内部工人函数通过\lstinline{pickle}序列化来接受\lstinline{dataset}和\lstinline{collate_fn}和其他参数。
+\end{itemize}
+分开序列化意味着，当你使用多进程数据加载时，你应该通过两个步骤来确保你和Windows是兼容的：
+\begin{itemize}
+    \item 将你主脚本的大部分代码使用\lstinline{if __name__ == '__main__'}包裹，来确保它在每个工人进程启动时不会再次运行（更有可能产生错误）。由于数据集和\lstinline{DataLoader}实例创建逻辑不需要在工人进程中再次执行，所以你可以将它们放在这里。
+    \item 确保任何自定义的\lstinline{collate_fn}，\lstinline{worker_init_fn}或\lstinline{dataset}代码被定义为顶级定义，也就是在\lstinline{__main__}检查之外。这确保了它们在工人进程中是可用的。（由于函数仅被保存为引用而不是\lstinline{bytecode}，所以这是有必要的。）
+\end{itemize}
+
+\subsubsection{多进程数据加载中的随机性}
+
+在默认情况下，每个工人的PyTorch种子会设置为\lstinline{base_seed + worker_id}，其中\lstinline{base_seed}是一个主进程使用它的RNG（因此，会强制小消耗一个RNG状态）或者一个指定的\lstinline{generator}产生的长整数。然而，其他库的种子可能会在初始化工人时重复，导致每个工人返回相同的随机数。
+
+在\lstinline{worker_init_fn}中，你可以通过\lstinline{torch.utils.data.get_worker_info().seed}或者\lstinline{torch.initial_seed()}来设置PyTorch种子，并在数据加载前使用它来作为其他库的种子。
+
+\end{document}

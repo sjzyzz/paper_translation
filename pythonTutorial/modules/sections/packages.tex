@@ -1,0 +1,98 @@
+\documentclass[../modules.tex]{subfiles}
+
+\begin{document}
+包是一种通过使用“带点模块名”来构建Python的模块命名空间的方法。例如，名为A.B的模块指定A包中的B模块。正如模块的使用使得不同模块的作者可以不必担心各自的全局变量名，带点模块名的使用使得例如NumPy或Pillow等多模块包的作者不必担心各自的模块名。
+
+假设你想设计一个统一处理声音文件和声音数据的模块集合（一个“包”）。由于存在很多不同的声音文件格式（通常通过它们的扩展名辨别，例如，.wav,.aiff,.au），所以为了多种文件格式的转换，你可能需要创建并维护一个越来越大的模块集合。还存在许多你想在声音数据上进行的不同的操作（例如混合，添加回音，应用均衡器函数，创建人工立体声），所以额外的，你需要写源源不断的模块来进行这些操作。这里是你的包的一个可能结构（通过层级化文件系统表达）：
+\begin{lstlisting}
+sound/                          Top-level package
+      __init__.py               Initialize the sound package
+      formats/                  Subpackage for file format conversions
+              __init__.py
+              wavread.py
+              wavwrite.py
+              aiffread.py
+              aiffwrite.py
+              auread.py
+              auwrite.py
+              ...
+      effects/                  Subpackage for sound effects
+              __init__.py
+              echo.py
+              surround.py
+              reverse.py
+              ...
+      filters/                  Subpackage for filters
+              __init__.py
+              equalizer.py
+              vocoder.py
+              karaoke.py
+              ...
+\end{lstlisting}
+当导入这个包时，Python沿着\lstinline{sys.path}中的目录寻找包子目录。
+
+为了使得Python将包含文件的目录视为包，你需要\lstinline{__init__.py}文件。这避免了有共同名字的目录，例如string，无意间隐藏了之后将会在模块搜索路径中出现的有用模块。在最简单的情况下，\lstinline{__init__.py}文件可以使一个空文件，但是它也可以为包执行初始化代码或者设置\lstinline{__all__}变量。
+
+包的用户可以从包导入单独的模块，例如：
+\begin{lstlisting}[language=Python]
+import sound.effects.echo
+\end{lstlisting}
+这会加载子模块\lstinline{sound.effects.echo}。它必须通过它的全名引用。
+\begin{lstlisting}[language=Python]
+sound.effects.echo.echofilter(input, output, delay=0.7, atten=4)
+\end{lstlisting}
+另外一种导入这个子模块的方法是：
+\begin{lstlisting}[language=Python]
+from sound.effects import echo
+\end{lstlisting}
+这也会载入子模块\lstinline{echo}，并且可以在没有包前缀的情况下使用它，所以它可以如此使用：
+\begin{lstlisting}[language=Python]
+echo.echofilter(input, output, delay=0.7, atten=4)
+\end{lstlisting}
+然而另外一种变种是直接导入想用的函数或变量：
+\begin{lstlisting}[language=Python]
+from sound.effects.echo import echofilter
+\end{lstlisting}
+
+注意当使用\lstinline{from package import item}时，item既可以是包的子模块（或者子包），也可以是在包中定义的一些名字，例如函数，类或变量。\lstinline{import}语句首先检查item是否在包中定义；如果没有，它假设它是一个模块，并尝试导入它。如果没有找到它，将会产生一个ImportError异常。
+
+\subsection{从一个包中导入*}
+
+当用户写下\lstinline{from sound.effects import *}时，会发生什么？理想情况下，人们会希望这会走出文件系统，找到这个包中的子模块，之后导入所有。这将花费很长时间并且导入子模块可能会有人们并不希望的仅应该在子模块被显式导入时才发生的副作用。
+
+唯一的解决办法就是包的作者提供一个包的显式索引。import语句使用如下传统：如果包的\lstinline{__init__.py}代码定义了一个名为\lstinline{__all__}的列表，那么发生\lstinline{from package import *}时，它将会作为应该被导入的模块名字的列表。当这个包的新版本发布时，是否将这个列表更新取决于作者。如果包的作者没有发现\lstinline{import *}用法，他们也可以选择不去支持它。例如，文件\lstinline{sound/effects/__init__.py}可以包含如下代码：
+\begin{lstlisting}
+__all_ = ['echo', 'surround', 'reverse']
+\end{lstlisting}
+这将意味着\lstinline{from sound.effect import *}将会导入sound包的三个子模块。
+
+如果没有定义\lstinline{__all__}，\lstinline{from sound.effects import *}语句\textbf{不会}从{sound.effects}包中导入所有的子模块；可以肯定的仅仅是包\lstinline{sound.effects}是被导入了的（可能运行\lstinline{__init__.py}中的任意初始化代码）同时导入了在包中定义的名字。这包括通过\lstinline{__init__.py}定义的任何名字（以及显式导入的子模块）。它也会包括通过之前的导入语句显式载入的包的子模块。考虑以下例子：
+\begin{lstlisting}
+import sound.effects.echo
+import sound.effects.surround
+from sound.effects import *
+\end{lstlisting}
+在这个例子中，由于\lstinline{echo}和\lstinline{surround}模块在\lstinline{sound.effects}包中被定义，所以当\lstinline{from...import}执行后，它们会被导入到当前的命名空间。（当\lstinline{__all__}被定义时，这也工作。）
+
+尽管当你使用\lstinline{import *}时，有些模块被设计来仅导出遵循特定模式的名字，但是在产品代码中使用它依旧是个不好的选择。
+
+请记住，使用\lstinline{from package import specific_submodule}没有任何问题！实际上，这才是推荐的记号除非导入的模块需要使用来自不同包的同名子模块。
+
+\subsection{包内引用}
+
+当包被构建为子包时（正如例子中的\lstinline{sound}包），你可以使用绝对引用来指向兄弟包的子模块。例如，如果\lstinline{sound.filters.vocoder}模块需要使用\lstinline{sound.effects}包中的\lstinline{echo}模块，它可以使用\lstinline{from sound.effects import echo}。
+
+你也可以通过\lstinline{from module import name}形式的导入语句来使用相对引用。这些导入使用前导的点（.）来表示相对导入设计的当前和父包。在\lstinline{surround}包的例子中，你可以使用：
+\begin{lstlisting}
+from . import echo
+from .. import formats
+from ..filters import equalizer
+\end{lstlisting}
+注意相对引用是基于当前模块的名字。由于主模块的名字一直是\lstinline{"__main__"}，所以Python应用中意欲用作主模块的模块必须一直使用绝对导入。
+
+\subsection{多个目录中的包}
+
+包支持一个额外的特殊属性，\lstinline{__path__}。在文件中的代码执行前，它被初始化为包含包的\lstinline{__init__.py}的目录的列表。这个变量可以被修改；这样做会影响将来对包含在这个包中的模块和子包的搜索。
+
+虽然这个特性并不经常被需要，它可以被用来扩展一个包中找到的模块集合。
+\end{document}

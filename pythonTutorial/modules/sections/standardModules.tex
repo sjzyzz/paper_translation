@@ -1,0 +1,22 @@
+\documentclass[../modules.tex]{subfiles}
+
+\begin{document}
+Python有一个有一些标准模块的库，它在一个单独的文档中描述，Python库参考。一些模块被构造入解释器中；这提供了使用不是语言核心然而自建操作的途径，或者为了效率或者提供接触操作系统原型例如系统调用的途径。这样的模块集合是一个设置选项，取决于底层运行的平台。例如，\lstinline{winreg}模块仅在视窗系统中提供。一个特殊的模块值得一些关注：\lstinline{sys}，它自带在每一个Python解释器中。变量\lstinline{sys.ps1}和\lstinline{sys.ps2}定义了作为提示的首要和次要字符串:
+\begin{lstlisting}[language=bash]
+>>> import sys
+>>> sys.ps1
+'>>> '
+>>> sys.ps2
+'... '
+>>> sys.ps1 = 'C>'
+C>print('Yuck!')
+C>
+\end{lstlisting}
+这两个变量尽在交互模式下的解释器中被定义。
+
+变量\lstinline{sys.path}是决定解释器模块搜索路径的字符串列表。它首先通过从环境变量\lstinline{PYTHONPATH}中得到的默认路径初始化，如果\lstinline{PYTHONPATH}没有被设置，则通过自建的默认路径。你可以通过使用标准的列表操作修改它
+\begin{lstlisting}[language=bash]
+>>> import sys
+>>> sys.path.append('/ufs/guido/lib/python')
+\end{lstlisting}
+\end{document}
