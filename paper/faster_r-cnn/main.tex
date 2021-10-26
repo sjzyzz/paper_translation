@@ -1,0 +1,21 @@
+\documentclass{ctexart}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{subfiles}
+\title{Faster R-CNN:使用候选区域生成网络向实时物体检测努力}
+\author{Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun}
+\date{}
+\begin{document}
+\maketitle
+\section{摘要}
+\subfile{sections/abstract}
+\section{简介}
+\subfile{sections/introduction}
+\section{FASTER R-CNN}
+\subfile{sections/fasterrcnn}
+\printbibliography
+\end{document}

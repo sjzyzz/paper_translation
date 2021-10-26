@@ -1,0 +1,5 @@
+\documentclass[../main]{subfile}
+\graphicspath{\subfix{../images}}
+\begin{document}
+这篇文章为物体检测提出了一个快速的基于区域的卷积网络方法（Fast R-CNN）。Fast R-CNN以前工作上使用深度卷积网络来高效分类物体候选。与之前的工作相比，Fast R-CNN应用了一些创新，在提高检测准确率的同时，提高了训练和测试速度。在训练非常深的VGG16时，Fast R-CNN比R-CNN快9倍，在测试时快213倍，并在PASCAL VOC上达到了更高的mAP。与SPPnet相比，Fast R-CNN在训练时快3倍，在测试时快10倍，同时更加准确。我们使用Python和C++（使用Caffe）实现了Fast R-CNN，同时代码在开源MIT执照下可用，见\href{https://github.com/rbgirshick/fast-rcnn}{https://github.com/rbgirshick/fast-rcnn}。
+\end{document}

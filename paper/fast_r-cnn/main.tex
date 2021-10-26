@@ -1,0 +1,26 @@
+\documentclass{ctexart}
+
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{subfiles}
+
+\title{Fast R-CNN}
+\author{Ross Girshick \\ Microsoft Research}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+    \subfile{sections/abstract}
+\end{abstract}
+\section{简介}
+\subfile{sections/introduction}
+\section{Fast R-CNN的架构和训练}
+\subfile{sections/architextureAndTraining}
+\printbibliography
+\end{document}
