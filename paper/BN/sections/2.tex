@@ -1,0 +1,21 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+我们将\textit{内部协变量偏移}定义为训练中由于网络参数的变换导致的网络激活分布的变换。为了改善训练，我们想要减少内部协变量偏移。随着训练的进行，通过固定每一层输入x的分布，我们期待可以提高训练速度。众所周知，洗白网络的输入，也就是通过线性转化使它的均值为零方差为一并去相关，可以使得网络收敛更快。由于每一层观测到的输入是由之前层产生的，所以对每一层的输入进行相同的洗白应该是有利的。通过洗白每一层的输入，我们应该可以向实现输入分布固定更进一步，这可以去除内部协变量偏移带来的负面影响。
+
+我们可以考虑通过直接修改网络或者改变优化算法的参数来依赖网络激活值，来在每一步训练或某个间隔中来洗白激活。然而，如果这些修改被穿插在优化步骤中，这时梯度下降步骤可能会以要求更新归一化的方式进行，这会减少梯度步骤的作用。例如，考虑某一个输入为$u$的层，它添加了要被学习的偏差$b$，并通过减去在训练数据上计算得到的激活的均值来进行归一化：$\hat{x} = x - E\left[x\right]$其中$x=u+b$，$\chi = \{x_1\ldots N\}$是训练集中$x$的集合，$\text{E}\left[x\right]=\frac{1}{N}\sum_{i=1}^{N}x_i$。如果梯度下降步骤忽略$\text{E}\left[x\right]$对$b$的依赖，那么它将会以$b \leftarrow b + \Delta b$的方式更新，其中$\Delta b \propto \partial \ell / \partial \hat{x}$。这时$u + \left( b + \Delta b \right) - \text{E}\left[ u + \left(b + \Delta b\right) \right] = u + b - \text{E}\left[ u+b \right]$。因此，对$b$的更新和后续在归一化中改变的结合导致层的输出没有改变，于是，损失也没有改变。随着训练继续，$b$将会在损失固定的情况下无限增长。如果归一化不仅中心化还缩放激活，这个问题会变得更糟。我们在最初的实验中经验性地观察到了这个情况，当归一化参数在梯度下降步骤之外计算时，模型会爆炸。
+
+上述方法的问题在于梯度下降优化没有考虑发生了归一化。为了解决这个问题，我们想要确保对于任意的参数值，网络\textit{总是}产生具有所需分布的激活。这样做将会允许损失相对于模型参数的梯度考虑归一化，以及它对于模型参数$\Theta$的依赖。假设x是某一层的输入，被当做一个向量，$\chi$是训练集中这些输入的集合。这时归一化可以被写作变换
+\begin{equation*}
+    \hat{\text{x}} = \text{Norm}\left( \text{x}, \chi \right)
+\end{equation*}
+，它不仅依赖于给定训练样本x，还依赖于所有样本$\chi$——如果x是由别的层产生的，那么每个x都依赖于$\Theta$。对于反向传播，我们需要计算Jacobians
+\begin{equation*}
+    \frac{\partial \text{Norm}\left( \text{x}, \chi \right)}{\partial \text{x}} \text{和}  \frac{\partial \text{Norm}\left( \text{x}, \chi \right)}{\partial \chi};
+\end{equation*}
+忽略后项将会导致上述的爆炸。在这个框架中，由于它要求计算协方差矩阵$\text{Conv}\left[\text{x}\right] = \text{E}_{\text{x}\in \chi}\left[ \text{xx}^\top \right] - \text{E}\left[ \text{x} \right] \text{E}\left[ \text{x} \right]^\top$和它的逆平方根，来产生洗白的激活$\text{Cov}\left[ \text{x} \right]^{-1/2} \left( \text{x} - \text{E}\left[ \text{x} \right] \right)$，以及为了反向传播计算这些变换的导数，所以洗白层输入是昂贵的。这激励我们寻找一种替代品，它要通过一种可微同时在每次参数更新后不要求分析整个训练集的方式来进行输入归一化。
+
+一些以前的方法使用在单个训练样例上或者，在图片网络的情况下，不同特征图中的给定位置计算得到的数据。然而，这会通过丢弃激活的绝对尺度改变网络的表征能力。我们希望通过相对于整个训练数据的数据对训练样例的激活进行归一化来保留网络中的信息。
+
+\end{document}

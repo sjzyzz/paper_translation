@@ -1,0 +1,27 @@
+\documentclass{ctexart}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{mathtools}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{subfiles}
+\title{批归一化:通过减少内部协变量偏移来加速深度网络训练}
+\author{Sergey Ioffe, Christian Szegedy}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+    \subfile{sections/0}
+\end{abstract}
+\section{简介}
+\subfile{sections/1}
+\section{减少内部协变量偏移}
+\subfile{sections/2}
+\section{通过迷你批数据进行归一化}
+\subfile{sections/3}
+\printbibliography
+\end{document}

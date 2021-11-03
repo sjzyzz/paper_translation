@@ -1,0 +1,128 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+由于每一层输入的完整洗白是大开销且不是处处可导的，所以我们做了两个必要的简化。第一点简化是我们独立归一化每一个标量特征，也就是使得它均值为零方差为一，而不是同时洗白层输入和输出的特征。对于有着$d$维输入$\text{x} = \left( x^{\left( 1 \right)} \ldots x^{\left( d \right)}\right)$的层，我们会按照
+\begin{equation*}
+    \hat{x}^{\left(k\right)} = \frac{x^{\left(k\right)} - \text{E}\left[ x ^{\left( k \right)}\right]}{\sqrt{\text{Var}\left[ x^{\left( k \right)} \right]}}
+\end{equation*}
+归一化每个维度，其中期望和方差是在训练数据集上计算的。正如\cite{backprop}中所讲的，这样的归一化可以加速收敛，即使特征并没有被去关联。
+
+注意简单地归一化某一层的每一个输入可能会改变这一层可以表征的东西。例如，归一化sigmoid的输入将会使它们被限制在非线性的线性区域。为了解决这个问题，我们确保\textit{插入网络中的变换可以表示恒等变换}。为了实现这个想法，我们为每一个激活$x^{\left( k \right)}$引入了一对参数$\gamma^{\left( k \right)}, \beta^{\left( k \right)}$，它们将会缩放和移动归一化后的值：
+\begin{equation*}
+    y^{\left( k \right)} = \gamma^{\left( k \right)}\hat{x}^{\left( k \right)} + \beta^{\left( k \right)}.
+\end{equation*}
+这些参数也会随着原有模型的参数被学习，并修复网络的表征能力。实际上，如果原有激活就是最优的，那么我们可以通过设置$\gamma^{\left( k \right)} = \sqrt{\text{Var}\left[ x^{\left( k \right)} \right]}$和$\beta^{\left( k \right)} = \text{E}\left[ x^{\left( k \right)} \right]$来恢复它。
+
+如果每一步训练都使用整个训练集，那么我们可以使用整个集合来为激活进行归一化。然而，当使用随机优化时这是不切实际的。因此，我们做了第二个简化：由于我们在随机梯度下降中使用迷你批，所以\textit{每个迷你批将会产生激活的均值和方差的估计}。这样，归一化中使用的数据可以全面参与到梯度反向传播中。注意迷你批的使用是通过计算每一个维度的变量而不是联合协变量使能的；在联合的情况下，由于迷你批的数量很可能比要洗白的激活数量小，导致奇异的协方差矩阵，所以需要正则化。
+
+考虑大小为$m$的迷你批。由于正则化是独立应用在每个激活上的，所以让我们专注于特定激活$x^{\left( k \right)}$并为了清晰去掉$k$。我们在这个迷你批中有$m$个激活值，
+\begin{equation*}
+    \mathcal{B} = \left\{ x_{1 \ldots m} \right\}.
+\end{equation*}
+记归一化后的值为$\hat{x}_{1 \ldots m}$，记它们的线性变换为$y_{1 \ldots m}$。我们将变换
+\begin{equation*}
+    \text{BN}_{\gamma,\beta}:x_{1 \ldots m} \rightarrow y_{1 \ldots m}
+\end{equation*}
+称为\textit{Batch Normalizing Transform}。我们在算法\ref{alg1}中展示了BN变换。在算法中，$\epsilon$是为了数值稳定性加在迷你批方差上的常量。
+
+\begin{algorithm}[H]
+    $\mu_\mathcal{B} \gets \frac{1}{m}\sum_{i=1}^m x_i$       // mini-batch mean
+
+    $\sigma_\mathcal{B}^2 \gets \frac{1}{m}\sum_{i=1}^m \left( x_i  - \mu_\mathcal{B} \right)^2$ // mini-batch variance
+
+    $\hat{x}_i \gets \frac{x_i - \mu_\mathcal{B}}{\sqrt{\sigma_\mathcal{B}^2 + \epsilon}}$ //nomalize
+
+    $y_i \gets \gamma\hat{x}_i + \beta \equiv \text{BN}_{\gamma,\beta}\left( x_i \right)$ // sclae and shift
+    \caption{应用在迷你批的激活$x$上的Batch Normalizing变换}
+    \label{alg1}
+\end{algorithm}
+
+BN转化可以被加到网络中来对任意激活进行操作。在$y = \text{BN}_{\gamma,\beta}\left(x\right)$中，参数$\gamma$和$\beta$表示被学习的参数，但是应该被注意的是，BN变换并不是独立处理每个训练样本的激活。与之相反，$\text{BN}_{\gamma,\beta}\left(x\right)$依赖于这个训练样本和\textit{迷你批中的其他样本}。缩放偏移后的值$y$将被传至网络的其他层。归一化后的激活$\hat{x}$是变换的内部变量，但是它们的表示是重要的。只要每个迷你批的元素采样自相同的分布，如果我们忽略$\epsilon$，那么$\hat{x}$的分布应该期望为0方差为1。这可以通过观察$\sum_{i=1}^m \hat{x}_i = 0$以及$\frac{1}{m}\sum_{i=1}^m \hat{x}_i^2 = 1$得到。每个正则化后的$\hat{x}^k$可以被视为一个子网络的输入，这个子网络由一个线性变换$y^{\left(k\right)} = \beta^{\left(k\right)}\hat{x}^{\left(k\right)} + \beta^{\left(k\right)}$以及原有网络完成的其他处理组成。这些子网络的输入都有固定的均值和方差，虽然这些归一化后的$\hat{x}^{\left(k\right)}$的联合分布会在训练的过程中变化，但是我们期望引入对输入的正则化可以加速子网络的训练，进而，加速整个网络的训练。
+
+在训练中我们需要将损失$\ell$的梯度通过变换反向传播，同时也要计算对于BN变换中参数的梯度。我们使用如下的链式法则（简化前）：
+% TODO: insert equations here
+因此，BN变换是一种将正则化激活引入网络的可微变换。这保证了随着模型的训练，层可以持续学习引入更少内部协变量偏移的输入分布，从而加速训练。不仅如此，习得的仿射变换允许BN变换表征恒等变换来保留网络的能力。
+
+\subsection{批归一化的网络上的训练和推理}
+
+为了对一个网络进行批归一化，我们指定激活的一个子集并根据算法\ref{alg1}为其中的每一个激活插入BN变换。任何之前接收$x$作为输入的层现在接收$\text{BN}\left(x\right)$作为输入。应用了批归一化的模型可以使用批梯度下降或者迷你批大小$m>1$的随机梯度下降或者它的任意变种，例如Adagrad\cite{adagrad}进行训练。依赖迷你批的激活归一化使得训练更加高效，但是在推理中，它既不是必要的，也不是想要的；我们希望输出仅仅依赖于输入，并且每次的结果都相同。出于这个想法，一旦网络完成训练，我们将使用总体而非小批量统计数据进行归一化：
+\begin{equation*}
+    \hat{x} = \frac{x - \text{E}\left[x\right]}{\sqrt{\text{Var}\left[x\right] + \epsilon}}.
+\end{equation*}
+忽略$\epsilon$，正如训练中，这些归一化后的激活有相同的零均值单位方差。我们使用无偏估计$\text{Var}\left[x\right] = \frac{m}{m-1} \cdot \text{E}_\mathcal{B}\left[ \sigma_\mathcal{B}^2 \right]$，其中期望是训练中大小为$m$的迷你批上得到的，$\sigma_\mathcal{B}^2$则是它们的方差。使用移动平均值，我们可以随着模型的训练追踪它的准确率。由于均值和方差在推理中是固定的，所以归一化仅仅是应用在每个激活上的线性变换。为了得到替换$\text{BN}\left(x\right)$的单一线性变换，可能包括通过$\gamma$缩放以及通过$\beta$偏移。算法\ref{alg2}总结了训练归一化网络的过程。
+
+\begin{algorithm}[H]
+    \SetKwInput{KwInput}{Input}                % Set the Input
+    \SetKwInput{KwOutput}{Output}              % set the Output
+    \DontPrintSemicolon
+    \KwInput{Network $N$ with trainable parameters $\Theta$; subset of activations $\left\{ x^{\left(k\right)} \right\}_{k=1}^K$}
+    \KwOutput{Batch-normalized network for inference, $N_{\text{BN}}^{\text{inf}}$}
+    $N_\text{BN}^\text{tr} \gets N$ // Training BN network
+
+    \For {$ k=1\ldots K $}
+    {
+    Add transformation $y^{\left(k\right)} = \text{BN}_{\gamma^{\left(k\right)},\beta^{\left(k\right)}}\left(x^{\left(k\right)}\right)$ to $N_\text{BN}^\text{tr}$
+
+    Modify each layer in $N_\text{BN}^\text{tr}$ with input $x^{\left(k\right)}$ to take $y^{\left(k\right)}$ instaed
+    }
+
+    Train $N_\text{BN}^\text{tr}$ to optimize the parameters $\Theta \cup \left\{ \gamma^{\left(k\right)}, \beta^{\left(k\right)} \right\}_{k=1}^K$
+
+    $N_\text{BN}^\text{inf} \gets N_\text{BN}^\text{tr}$ // Inference BN network with frozen parameters
+
+    \For{$k=1\ldots K$}
+    {
+        //For clarity, $x \equiv x^{\left(k\right)}, \gamma \equiv \gamma^{\left(k\right)},\mu \equiv \mu^{\left(k\right)},$ etc.
+
+        Process multiple training mini-batches $\mathcal{B}$, each of size $m$, and average over them: $\vcenter{
+                \begin{align*}
+                     & \text{E}\left[x\right]   & \gets & \text{E}_\mathcal{B} \left[ \mu_\mathcal{B} \right]                  \\
+                     & \text{Var}\left[x\right] & \gets & \frac{m}{m-1}\text{E}_\mathcal{B}\left[ \sigma_\mathcal{B}^2 \right]
+                \end{align*}
+            }$
+    }
+
+    In $N_\text{BN}^\text{inf}$, replace the transform $y = \text{BN}_{\gamma, \beta}\left(x\right)$ with \\$y = \frac{\gamma}{\sqrt{\text{Var}\left[x\right] + \epsilon}}\cdot x + \left( \beta - \frac{\gamma\text{E}\left[x\right] }{\sqrt{\text{Var}\left[x\right]}} \right)$
+    \caption{应用在迷你批的激活$x$上的Batch Normalizing变换}
+    \label{alg2}
+\end{algorithm}
+
+\subsection{批归一化的卷积网络}
+
+批归一化可以应用于网络的任意激活集合上。这里，我们专注于由仿射变换紧接一个元素非线性的变换，其中非线性为：
+\begin{equation*}
+    \text{z} = g\left( W\text{u} + \text{b} \right)
+\end{equation*}
+其中$W$和b是模型习得的参数，$g\left(\cdot\right)$则是例如sigmoid或ReLU的非线性。这种提法既包括全连接层也包括卷积层。我们在非线性之前添加BN变换，也就是归一化$\text{x} = W\text{u} + \text{b}$。我们也可以归一化层输入u，但是由于u很可能是其他的非线性的输出，在训练中它的分布的形状很可能改变，同时约束其一阶和二阶矩不会消除协变量偏移。与之对比的是，$W\text{u} + \text{b}$更可能有一个对称的，不稀疏的分布，也就是“更加高斯”；归一化它更有可能产生一个有着稳定分布的激活。
+
+注意，由于我们归一化$W\text{u} + \text{b}$，偏移b的作用将会经由后续的减去均值而取消（偏移的作用将会归入算法\ref{alg1}的$\beta$中）。因此，$\text{z} = W\text{u} + \text{b}$被替换为
+\begin{equation*}
+    \text{z} = g\left(\text{BN}\left(W\text{u}\right)\right)
+\end{equation*}
+其中BN变换被独立应用于$\text{x} = W\text{u}$的每一个维度，每一个维度都有单独的习得的
+
+对于卷积层，我们额外想要归一化遵循卷积的性质——这样同一特征图不同位置的不同元素通过同样的方式归一化。为了实现这一点，我们同时归一化迷你批中所有位置的所有激活。在算法\ref{alg1}中，我们让$\mathcal{B}$为跨越迷你批中所有元素以及所有空间位置的所有值的集合——所以对于大小为$m$的迷你批以及大小为$p\times q$的特征图，我们使用有效的迷你批大小为$m^\prime = \vert \mathcal{B} \vert = m\cdot pq $。我们为每一个特征图学习一对参数$\gamma^{\left(k\right)}$和$\beta^{\left(k\right)}$，而不是为每一个激活。算法\ref{alg2}也做类似的修改，这样在推理中BN变换会对给定特征图的每一个激活进行同样的线性变换。
+
+\subsection{批归一化使能更高的学习率}
+
+在传统的深度网络中，过高的学习率可能导致梯度爆炸或梯度消失，同时也会被困在局部最小值点。批归一化会帮助解决这个问题。通过归一化整个网络的激活，它防止了参数的微小变化被放大以及激活梯度的次优改变；例如，它会防止训练被困在非线性的饱和区。
+
+批归一化也是的训练对于参数尺度更加灵活。通常，大的学习率可能增加参数的尺度，这会在反向传播中放大梯度并导致模型爆炸。然而，有了批归一化，反向传播通过一层时不会被它的参数尺度影响。实际上，对于某个标量$a$，
+\begin{equation*}
+    \text{BN}\left(W\text{u}\right) = \text{BN}\left(aW\text{u}\right)
+\end{equation*}
+并且我们可以展示
+\begin{equation*}
+    \begin{aligned}
+         & \frac{\partial \text{BN}\left(aW\text{u}\right)}{\partial \text{u}} & = & \frac{\text{BN}\left(W\text{u}\right)}{\partial \text{u}}               \\
+         & \frac{\partial \text{BN}\left(aW\text{u}\right)}{\partial aW}       & = & \frac{1}{a} \frac{\partial \text{BN}\left(W\text{u}\right)}{\partial W}
+    \end{aligned}
+\end{equation*}
+尺寸不会影响层的Jacobian或者梯度的传播。不仅如此，更大的权重导致\textit{更小}的梯度，批归一化将会平稳参数的增长。
+
+我们进一步推测批归一化可能引导层的Jacobians的特征值接近1，这对于训练是有好处的。
+
+\subsection{批归一化正则化了模型}
+
+\end{document}
