@@ -1,0 +1,17 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+本节将介绍我们提出的SSD检测框架（\ref{sec:model}节）和相关的训练方法（\ref{sec:training}节）。之后，第3节将介绍了对应数据集的具体模型细节和实验结果。
+
+\subsection{模型} \label{sec:model}
+
+SSD方法基于一个前向传播卷积网络，它产生一个固定大小的边界框集合，并对这些框中存在的物体类别实例进行评分，然后通过一个非最大抑制步骤来产生最终的检测结果。前期的网络层是基于用于高质量图像分类的标准结构（在分类层之前截断），我们将其称之基础网络。然后，我们向网络添加辅助结构，以产生具有以下关键特征的检测结果：
+
+\paragraph{用于检测的多尺度特征图} 我们在截断的基础网络的末端添加卷积特征层。这些层的大小逐渐减少，并允许在多个尺度上预测检测。预测检测的卷积模型对于每个特征层都是不同的（参考Overfeat[4]和YOLO[5]，它们在单一尺度的特征图上进行操作）。
+
+\paragraph{用于检测的卷积预测器}
+
+\subsection{训练} \label{sec:training}
+
+\end{document}

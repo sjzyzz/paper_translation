@@ -1,0 +1,38 @@
+\documentclass{ctexart}
+
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{subfiles}
+
+\title{用于精准物体检测和语义分割的丰富特征层次结构}
+\author{Ross Girshick, Jeff Donahue, Trevor Darrell, Jitendra Malik}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+    \subfile{sections/abstract}
+\end{abstract}
+\section{简介}\label{sec:introduction}
+\subfile{sections/introduction}
+\section{使用R-CNN进行物体检测}\label{sec:detection}
+\subfile{sections/detection_with_R-CNN}
+\section{可视化、消融实验和误差类型}\label{sec:understanding}
+\subfile{sections/understanding}
+\appendix
+\section{物体候选变换}\label{app:transformation}
+\subfile{appendix/proposal_transformations}
+\section{正例vs.负例以及softmax}\label{app:posi_neg}
+\subfile{appendix/positive_and_negative}
+\section{边界框回归}
+\subfile{appendix/box_reg}
+\printbibliography
+\end{document}

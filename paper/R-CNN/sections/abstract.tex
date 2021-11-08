@@ -1,0 +1,7 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+在过去的几年里，在典型的PASCAL VOC数据集上测量的物体检测性能已经趋于平稳。表现最好的方法是复杂的组合系统，通常将多个低层次的图像特征与高层次的背景相结合。在本文中，我们提出了一种简单的、可扩展的检测算法，相对于VOC 2012上的最佳结果，该算法的平均精度（mAP）提高了30\%以上，达到了53.3\%。我们的方法结合了两个关键的见解：(1) 我们可以将大容量卷积神经网络（CNN）应用于自下而上的候选区域，来对物体进行定位和分割；(2) 当标记的训练数据不足时，对辅助任务进行监督预训练，然后再进行特定领域的微调，可以产生显著的性能提升。由于我们将区域候选与CNN结合起来，我们将我们的方法称为R-CNN：具有CNN特征的区域。我们还将R-CNN与OverFeat进行了比较，后者是最近提出的基于类似CNN架构的滑动窗口检测器。我们发现，在200类ILSVRC2013检测数据集上，R-CNN比OverFeat的性能高出很多。系统源代码可见\href{http://www.cs.berkeley.edu/˜rbg/rcnn}{http://www.cs.berkeley.edu/˜rbg/rcnn}。
+
+\end{document}

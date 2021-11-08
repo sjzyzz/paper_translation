@@ -1,0 +1,45 @@
+\documentclass[../main]{subfile}
+\begin{document}
+
+基本的切片将Python的基本切片概念扩展到了N维。当\lstinline{obj}是切片对象（通过括号中的\lstinline{start:stop:step}构造）、整数或者切片和整数的元组时，基本切片将会被触发。省略号和\lstinline{newaxis}对象也可以穿插其中。
+
+使用N个整数进行索引是最简单的情况，它会放回表示对应元素的\href{https://numpy.org/doc/stable/reference/arrays.scalars.html#arrays-scalars}{数组标量}。和Python一样，所有的索引都是从0开始的：对于第i个索引$n_i$，合法的范围是$0 \leq n_i < d_i$，其中$d_i$是数组形状的第i个元素。负索引通过从末尾开始计数被穿插其中（也就是，当$n_i < 0$时，它表示$n_i + d_i$）。
+
+所有通过基本切片生成的数组都是原数组的视图。
+
+\paragraph{Note}NumPy切片会创造一个视图而不是如Python自建序列例如string, tuple和list创建一个备份。对于一个大数组，当从中提取一小部分之后大数组就变得无用的情况，尤其要注意。因为这一小部分提取的数组包含对大数组的引用，而大数组的内存直到所有从它衍生出的数组都被垃圾收集后才会被释放。在这种情况下，显式使用\lstinline{copy()}是推荐的。
+
+序列切片的标准规则适用于每一个维度的基本切片（包括使用步长索引）。一些需要记住的有用概念包括：
+\begin{itemize}
+    \item 基本的切片语法\lstinline{i:j:k}其中$i$是起始索引，$j$是停止索引，$k$是步长（$k \neq 0$）。
+    \item 负数$i$和$j$会被作为$n + i$和$n + j$进行穿插，其中$n$是对应维度的元素数量。负数$k$则会使得朝着更小的索引进行迈步。
+    \item 假设$n$为被切片维度的元素数量。那么，如果$i$没有被给出则若$k > 0$，$i$为0，若$k < 0$则$i = n - 1$。如果$j$没有给出则类似。注意，\lstinline{::}和\lstinline{:}是一样的，都表示选择对应维度的所有切片。
+    \item 如果选择元组中对象的数量小于$N$，这时则假设后续的所有维度都使用\lstinline{:}。
+          \begin{lstlisting}
+            >>> x = np.array([[[1],[2],[3]], [[4],[5],[6]]])
+            >>> x.shape
+            (2, 3, 1)
+            >>> x[1:2]
+            array([[[4],
+                    [5],
+                    [6]]])
+        \end{lstlisting}
+    \item 省略号将扩展为选择元组为索引所有维度所需的\lstinline{:}对象数量。在大多数情况下，这意味着扩展后的选择元组长度为\lstinline{x.ndim}。仅能存在一个单独的省略号表示。
+          \begin{lstlisting}
+            >>> x[...,0]
+            array([[1, 2, 3],
+                   [4, 5, 6]])
+        \end{lstlisting}
+    \item 选择元组中的每个\lstinline{newaxis}对象起到为结果选择元组扩展一个单位长度的维度的作用。加入维度是\lstinline{newaxis}在选择元组中的位置。
+          \begin{lstlisting}
+        >>> x[:,np.newaxis,:,:].shape
+        (2, 1, 3, 1)
+    \end{lstlisting}
+    \item 一个整数$i$，返回与\lstinline{i:i+1}相同的值，除了返回对象的维度减少1。特别的，一个第p个元素为整数的选择元组（其余皆为\lstinline{:}）放回对应维度为$N - 1$的子数组。当$N=1$时，这时返回的元素是一个数组标量。
+    \item 如果选择元组除了第p个元素为切片对象\lstinline{i:j:k}，其余元素皆是\lstinline{:}，这时返回的数组维度为N，这个数组通过将使用整数$i, i+k, \ldots, i + (m - 1)k < j$索引返回的子数组拼接而成。
+    \item 使用有着不止一个非\lstinline{:}条目的切片元组进行切片时，基本切片将会类似重复应用使用单个非\lstinline{:}条目进行切片，其中非\lstinline{:}条目被以此使用（将所有其他的非\lstinline{:}条目替换为\lstinline{:}）。因此在基本切片中，\lstinline{x[ind1,..., ind2, :]}等价于\lstinline{x[ind1][..., ind2, :]}。
+          \paragraph{Warning} 这一条对于高级索引是不适用的。
+    \item 你可以使用切片来设置数组中的值，但是（与列表不同）你不能增长数组。在\lstinline{x[obj] = value}中，设置的value的形状一定要与\lstinline{x[obj]}的形状相同（或广播后相同）。
+\end{itemize}
+
+\end{document}

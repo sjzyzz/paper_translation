@@ -1,0 +1,39 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+我们使用一个简单的边界框回归阶段来提高定位性能。在用特定类别的检测SVM对每个选择性搜索建议进行打分后，我们使用特定类别的边界框回归器预测检测的新边界框。这与可变形部件模型\cite{dpm}中使用的边界盒回归相似。这两种方法的主要区别是，在这里我们从CNN计算的特征进行回归，而不是从推断的DPM零件位置上计算的几何特征进行回归。
+
+我们的训练算法的输入是一组$N$个训练对$\left\{ \left( P^i, G^i \right) \right\}_{i=1,\ldots, N}$，其中$P^i = \left( P_x^i, P_y^i, P_w^i, P_h^i \right)$指定候选$P^i$的边界框中心的像素坐标，以及$P^i$的宽度和高度（像素）。因此，除非有必要，我们放弃上标$i$。每个真实边界盒$G$也以同样的方式指定：$G=\left( G_x, G_y, G_w, G_h \right)$。我们的目标是学习一个将候选框$P$映射到ground-truth框$G$转换。
+
+我们用四个函数$d_x\left( P \right), d_y\left( P \right), d_w\left( P \right)$和$d_h\left( P \right)$来确定变换的参数。前两个函数指定了$P$的边界框中心的尺度不变的平移，而后两个函数指定了$P$的边界框的宽度和高度的对数空间转换。在学习了这些函数之后，我们可以通过将转换在应用输入的候选$P$来得到预测的ground-truth框$\hat{G}$
+
+\begin{equation*}
+    \begin{aligned}
+         & \hat{G}_x & = & P_{w}d_{x}\left(P\right) + P_x          \\
+         & \hat{G}_y & = & P_{h}d_{y}\left(P\right) + P_y          \\
+         & \hat{G}_w & = & P_{w}\exp\left(d_w\left(P\right)\right) \\
+         & \hat{G}_h & = & P_{h}\exp\left(d_h\left(P\right)\right)
+    \end{aligned}
+\end{equation*}
+
+每个函数$d_\star \left(P\right)$(其中$\star$是$x, y, h, w$中的一个)被建模为候选$P$的pool5特征的线性函数，用$\phi_5\left(P\right)$表示。($\phi_5\left(P\right)$对图像数据的依赖性是隐含的假设）。因此，我们有$d_\star \left(P\right) = \mathbf{w}_\star^\top \phi_5\left(P\right)$，其中$\mathbf{w}_\star$是一个可学习的模型参数的向量。我们通过优化正则化最小二乘法目标（脊回归）来学习$\mathbf{w}_\star$：
+\begin{equation*}
+    \mathbf{w}_\star = \arg\min_{\hat{\mathbf{w}}_\star}\sum_i^N\left( t_\star^i - \hat{\mathbf{w}}_\star^\top \phi_5\left (P\right) \right)^2 + \lambda\Vert \hat{\mathbf{w}}_\star \Vert^2
+\end{equation*}
+训练对$\left( P, G \right)$的回归目标$t_\star$定义为
+\begin{equation*}
+    \begin{aligned}
+         & t_x & = & \left( G_x - P_x \right) / P_w \\
+         & t_y & = & \left( G_y - P_y \right) / P_h \\
+         & t_w & = & \log\left( G_w / P_w \right)   \\
+         & t_h & = & \log\left( G_h / P_h \right)
+    \end{aligned}
+\end{equation*}
+作为一个标准的正则化最小二乘问题，这可以通过闭合形式有效解决。
+
+我们在实现边界框回归时发现了两个微妙的问题。第一个问题是正则化很重要：我们在验证集的基础上设置了$\lambda = 1000$。第二个问题是，在选择使用哪些训练对$\left( P, G \right)$时必须小心。直观地说，如果$P$远离所有的ground-truth框，那么将$P$转化为ground-truth框G的任务就没有意义了。使用像$P$这样的例子会导致一个无望的学习问题。因此，仅当某个候选至少靠近一个ground-truth框时，我们才从这个候选$P$中学习。我们通过当且仅当$P$与与它有最大IoU重合ground-truth框$G$（如果它重合了一个以上）的重合度大于阈值（我们使用验证集设定为0.6）时,才将$P$分配到与它有最大IoU重合的ground-truth框$G$，来实现“接近性”。所有未分配的候选都被丢弃。我们为每个对象类别做一次，以便学习一组特定类别的边界箱回归器。
+
+在测试时，我们对每个提议进行评分，并只预测其新的检测窗口一次。原则上，我们可以迭代这个程序（即对新预测的边界盒重新打分，然后再从中预测一个新的边界盒，如此反复）。然而，我们发现，迭代并不能改善结果。
+
+\end{document}
