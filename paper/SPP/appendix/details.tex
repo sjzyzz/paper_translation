@@ -1,0 +1,21 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+在附录中，我们描述了一些实施细节：
+
+\paragraph{减均值。}
+
+$224×224$的训练/测试图像通常通过减去每个像素的平均值进行预处理[3]。当输入图像是任意尺寸时，固定尺寸的平均图像就不能直接适用。在ImageNet数据集中，我们将$224×224$的平均图像扭曲成所需的大小，然后减去它。在Pascal VOC 2007和Caltech101中，我们在所有的实验中使用恒定的平均数（128）。
+
+\paragraph{池化仓的实现}
+
+在应用网络时，我们使用以下实现方式来处理所有的仓。将$\text{conv}_5$特征图的宽度和高度（可以是全图或一个窗口）表示为$w$和$h$。对于一个有$n \times n$个仓的金字塔层级，第$\left( i, j \right)$个仓在$\left[ \lceil \frac{i-1}{n}w \rceil, \lfloor \frac{i}{n}w \rfloor \right] \times \left[ \lceil \frac{j-1}{n}h \rceil, \lfloor \frac{j}{n}h \rfloor \right]$。直觉上，如果需要四舍五入，我们在左边/顶部边界采取向下取整操作，在右边/底部边界采取向上取整操作。
+
+\paragraph{将一个窗口映射到特征图}
+
+在检测算法（以及对特征图的多视图测试）中，在图像域中给出了一个窗口，我们用它来裁剪已经被多次下采样的卷积特征图（例如$\text{conv}_5$）。所以我们需要在特征图上为窗口对齐。
+
+在我们的实现中，我们将一个窗口的角点投射到特征图中的一个像素上，使得这个角点在图像域中最接近该特征图像素的感受野的中心。由于所有卷积层和池化层的填充，这种映射很复杂。为了简化实施，在部署过程中，我们为卷积核大小为$p$的层填充了$\lceil p/2 \rceil$个像素。这样，对于一个中心位于$\left( x^\prime, y^\prime \right)$的响应，它在图像域中的有效接受域中心位于$\left( Sx^\prime, Sy^\prime \right)$，其中$S$是之前所有步长的乘积。在我们的模型中，ZF-5在$\text{conv}_5$的$S$为16，Overfeat-5/7在$\text{conv}_{5/7}$的$S$为12。对于给定图像域中的窗口，我们通过$x^\prime = \lceil x / S \rceil + 1$以及$x^\prime = \lfloor x / S \rfloor - 1$来分别对左上角和右上角的边界进行投影。如果填充不是$\lceil p/2 \rceil$，我们需要诶$x$加上适当的偏移。
+
+\end{document}
