@@ -1,0 +1,25 @@
+\documentclass{ctexart}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{subfiles}
+\title{面向物体检测的特征金字塔网络}
+\author{Tsung-Yi Lin， Piotr Dollar， Ross Girshick, \\
+Kaiming He, Bharath Hariharan, and Serge Belongie}
+\date{}
+\begin{document}
+\maketitle
+\section{摘要}
+\subfile{sections/abstract}
+\section{简介}
+\subfile{sections/introduction}
+\section{特征金字塔网络}
+\subfile{sections/fpn}
+\section{应用}
+\subfile{sections/applications}
+\printbibliography
+\end{document}

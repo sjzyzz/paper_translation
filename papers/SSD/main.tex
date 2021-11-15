@@ -1,0 +1,28 @@
+\documentclass{ctexart}
+
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{subfiles}
+
+\title{You Only Look Once:\\Unified, Real-Time Object Detection}
+\author{Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+    \subfile{sections/abstract}
+\end{abstract}
+\section{Introduction}
+\subfile{sections/introduction}
+\section{Unified Detection}
+\subfile{sections/detection}
+\printbibliography
+\end{document}
