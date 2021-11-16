@@ -1,0 +1,7 @@
+\documentclass[../main.tex]{subfile}
+\graphicspath{{\subfix{../images}}}
+\begin{document}
+
+我们提出了一种全卷积的单阶段目标检测器 (FCOS)，以类似于语义分割的每像素预测方式解决目标检测问题。几乎所有最先进的物体检测器，如 RetinaNet、SSD、YOLOv3 和 Faster R-CNN 都依赖于预定义的锚框。相比之下，我们提出的检测器 FCOS 没有锚框，也没有候选。通过消除预定义的锚框集合，FCOS 完全避免了与锚框相关的复杂计算，例如在训练过程中计算重叠。更重要的是，我们还避免了与锚框相关的所有超参数，最终检测性能通常对这些超参数非常敏感。凭借唯一的后处理——非极大值抑制（NMS），FCOS with ResNeXt-64x4d-101 在单模型单尺度测试的 AP 中达到了 44.7\%，超越了之前的单阶段检测器，同时有着更简单的优势。我们第一次展示了一个更简单和灵活的检测框架，可以提高检测精度。我们希望提出的 FCOS 框架可以作为许多其他实例级任务的简单而强大的替代方案。代码位于：\href{tinyurl.com/FCOSv1}{tinyurl.com/FCOSv1}。
+
+\end{document}

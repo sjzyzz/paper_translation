@@ -1,0 +1,29 @@
+\documentclass{ctexart}
+
+\usepackage{bbm}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[backend=biber, style=numeric, sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{subfiles}
+
+\title{FCOS: Fully Convolutional One-Stage Object Detection}
+\author{Zhi Tian, Chunhua Shen, Hao Chen, Tong He}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+    \subfile{sections/abstract}
+\end{abstract}
+\section{Introduction}
+\subfile{sections/introduction}
+\section{Our Approach}
+\subfile{sections/detection}
+\printbibliography
+\end{document}
