@@ -8,8 +8,8 @@
 
 \begin{figure}[htb]
     \centering
-    \includegraphics[width=\textwidth]{fig2.png}
-    \caption{\textbf{模型。}我们的系统将检测建模为一个回归问题。它将图片划分为$S\times S$个网格，并为每个网格预测$B$个边界框、这些边界框的置信度和$C$个类别概率。这些预测被编码为一个$S\times S \times \left( B \ast 5 + c \right)$的张量。}
+    \includegraphics[width=\textwidth]{fig1.png}
+    \caption{如左图所示，FCOS 通过预测 4D 向量$\left(l,t,r,b\right)$对每个前景像素的边界框位置进行编码（在训练期间由ground-truth边界框信息监督）。 右图显示，当一个位置在多个边界框中时，该位置应该回归哪个边界框可能不明确。}
     \label{fig:fig1}
 \end{figure}
 
